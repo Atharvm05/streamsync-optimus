@@ -6,30 +6,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
 
-// Team data
-const teamMembers = [
-  {
-    name: 'Emma Chen',
-    role: 'CEO & Founder',
-    image: 'https://randomuser.me/api/portraits/women/17.jpg'
-  },
-  {
-    name: 'Michael Torres',
-    role: 'CTO',
-    image: 'https://randomuser.me/api/portraits/men/32.jpg'
-  },
-  {
-    name: 'Sarah Johnson',
-    role: 'Head of Product',
-    image: 'https://randomuser.me/api/portraits/women/44.jpg'
-  },
-  {
-    name: 'James Wilson',
-    role: 'Lead Engineer',
-    image: 'https://randomuser.me/api/portraits/men/67.jpg'
-  }
-];
-
 // Stats
 const stats = [
   { value: '99.99%', label: 'Uptime', icon: <Clock size={20} className="text-primary" /> },

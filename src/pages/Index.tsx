@@ -1,43 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Play, ChevronRight, Code, FilmIcon, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, Play, ChevronRight, Code, FilmIcon, Zap, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import VideoPlayer from '@/components/VideoPlayer';
 import GlobalTimeline from '@/components/GlobalTimeline';
 import { cn } from '@/lib/utils';
-
-// Mock featured content
-const featuredContent = [
-  {
-    id: '1',
-    title: 'Big Buck Bunny',
-    description: 'A short film about a big rabbit who encounters three bullying rodents.',
-    src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    thumbnail: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
-    duration: 596,
-    viewers: 3842
-  },
-  {
-    id: '2',
-    title: 'Elephant Dream',
-    description: 'The first Blender Open Movie from 2006.',
-    src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    thumbnail: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg',
-    duration: 653,
-    viewers: 2195
-  },
-  {
-    id: '3',
-    title: 'Sintel',
-    description: 'A lonely girl travels to find her dragon friend.',
-    src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-    thumbnail: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg',
-    duration: 888,
-    viewers: 4271
-  }
-];
+import { useSync } from '@/contexts/SyncContext';
+import { VideoService } from '@/services/VideoService';
 
 // Features section
 const features = [
@@ -59,23 +30,46 @@ const features = [
 ];
 
 const Index: React.FC = () => {
-  const [selectedVideo, setSelectedVideo] = useState(featuredContent[0]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showGlobalTimeline, setShowGlobalTimeline] = useState(false);
+  const { 
+    currentVideo, 
+    selectVideo, 
+    isConnected,
+    globalViewerCount,
+    isDarkMode,
+    toggleDarkMode
+  } = useSync();
+  const [showGlobalTimeline, setShowGlobalTimeline] = useState(true);
   const [activeFeature, setActiveFeature] = useState(0);
   
-  // Auto rotate features
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveFeature(prev => (prev + 1) % features.length);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  // Get all available videos
+  const featuredContent = VideoService.getAllVideos();
   
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      
+      {/* Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleDarkMode}
+          className="rounded-full"
+          aria-label="Toggle theme"
+        >
+          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
+      </div>
+      
+      {/* Connection Status */}
+      <div className={cn(
+        "fixed top-4 left-4 z-50 px-3 py-1 rounded-full text-xs font-medium transition-all duration-300",
+        isConnected 
+          ? "bg-green-500/10 text-green-500 border border-green-500/20" 
+          : "bg-red-500/10 text-red-500 border border-red-500/20"
+      )}>
+        {isConnected ? 'Connected' : 'Connecting...'}
+      </div>
       
       {/* Hero Section */}
       <section className="pt-24 pb-16 px-4 md:pt-32 md:pb-24">
@@ -103,16 +97,18 @@ const Index: React.FC = () => {
           
           {/* Video Player Preview */}
           <div className="relative rounded-2xl overflow-hidden shadow-2xl animate-scale-in">
-            <VideoPlayer 
-              src={selectedVideo.src}
-              poster={selectedVideo.thumbnail}
-              title={selectedVideo.title}
-            />
+            {currentVideo && (
+              <VideoPlayer 
+                src={currentVideo.src}
+                poster={currentVideo.thumbnail}
+                title={currentVideo.title}
+              />
+            )}
             
             {/* Global Timeline (toggleable) */}
             <div className="mt-4 mb-8 px-4">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-medium">{selectedVideo.title}</h3>
+                <h3 className="text-lg font-medium">{currentVideo?.title}</h3>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -123,16 +119,17 @@ const Index: React.FC = () => {
               </div>
               
               {showGlobalTimeline && (
-                <GlobalTimeline
-                  currentPosition={35}
-                  duration={selectedVideo.duration}
-                  className="mb-4"
-                />
+                <GlobalTimeline className="mb-4" />
               )}
               
-              <p className="text-muted-foreground">
-                {selectedVideo.description}
-              </p>
+              <div className="flex justify-between items-center">
+                <p className="text-muted-foreground">
+                  {currentVideo?.description}
+                </p>
+                <span className="text-sm text-muted-foreground">
+                  {globalViewerCount} viewers watching now
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -188,9 +185,10 @@ const Index: React.FC = () => {
                 key={item.id}
                 className={cn(
                   'overflow-hidden rounded-xl transition-all duration-300 cursor-pointer',
-                  'hover:shadow-lg hover:-translate-y-1'
+                  'hover:shadow-lg hover:-translate-y-1',
+                  currentVideo?.id === item.id ? 'ring-2 ring-primary' : ''
                 )}
-                onClick={() => setSelectedVideo(item)}
+                onClick={() => selectVideo(item.id)}
               >
                 <div className="aspect-video relative overflow-hidden">
                   <img 

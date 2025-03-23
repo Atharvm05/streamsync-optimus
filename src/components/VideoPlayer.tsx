@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSync } from '@/contexts/SyncContext';
+import { VideoService } from '@/services/VideoService';
 
 interface VideoPlayerProps {
   src: string;
@@ -16,7 +18,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   title,
   className
 }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { isPlaying, togglePlayback, seekTo, currentPosition } = useSync();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -29,6 +31,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const playerRef = useRef<HTMLDivElement>(null);
   const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
   
+  // Connect to VideoService
+  useEffect(() => {
+    if (videoRef.current) {
+      VideoService.setVideoElement(videoRef.current);
+    }
+    
+    return () => {
+      VideoService.setVideoElement(null);
+    };
+  }, []);
+  
   // Format time in MM:SS
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -37,24 +50,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
   
   // Handle play/pause
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
+  const handleTogglePlay = () => {
+    togglePlayback();
   };
   
   // Handle video seeking
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
     setCurrentTime(newTime);
-    if (videoRef.current) {
-      videoRef.current.currentTime = newTime;
-    }
+    seekTo((newTime / duration) * 100);
   };
   
   // Handle volume change
@@ -131,24 +135,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setDuration(video.duration);
     };
     
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleVolumeChange = () => setVolume(video.volume);
     const handleWaiting = () => setIsBuffering(true);
     const handlePlaying = () => setIsBuffering(false);
     
     video.addEventListener('timeupdate', updateProgress);
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-    video.addEventListener('volumechange', handleVolumeChange);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('playing', handlePlaying);
     
     return () => {
       video.removeEventListener('timeupdate', updateProgress);
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
-      video.removeEventListener('volumechange', handleVolumeChange);
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('playing', handlePlaying);
     };
@@ -192,7 +187,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         src={src}
         poster={poster}
         className="w-full h-full object-contain"
-        onClick={togglePlay}
+        onClick={handleTogglePlay}
         playsInline
       />
       
@@ -222,7 +217,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           {!isPlaying && (
             <button 
               className="w-20 h-20 flex items-center justify-center bg-primary/80 backdrop-blur-sm rounded-full text-white pointer-events-auto"
-              onClick={togglePlay}
+              onClick={handleTogglePlay}
             >
               <Play size={36} />
             </button>
@@ -250,7 +245,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <div className="flex items-center justify-between text-white">
             <div className="flex items-center gap-4">
               <button 
-                onClick={togglePlay}
+                onClick={handleTogglePlay}
                 className="hover:text-primary transition-colors"
               >
                 {isPlaying ? <Pause size={20} /> : <Play size={20} />}

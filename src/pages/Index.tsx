@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import VideoPlayer from '@/components/VideoPlayer';
 import GlobalTimeline from '@/components/GlobalTimeline';
+import VideoInput from '@/components/VideoInput';
 import { cn } from '@/lib/utils';
 import { useSync } from '@/contexts/SyncContext';
 import { VideoService } from '@/services/VideoService';
@@ -85,13 +86,19 @@ const Index: React.FC = () => {
               Experience lag-free, perfectly synchronized streaming across any device, 
               anywhere in the world, all at the same time.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button size="lg" className="gap-2">
                 Get Started <ArrowRight size={18} />
               </Button>
               <Button variant="outline" size="lg" className="gap-2">
                 View Demo <Play size={18} />
               </Button>
+            </div>
+            
+            {/* Add custom video input */}
+            <div className="mt-4 mb-8">
+              <h3 className="text-lg font-medium mb-2">Add Your Own Video</h3>
+              <VideoInput />
             </div>
           </div>
           

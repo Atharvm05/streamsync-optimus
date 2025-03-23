@@ -15,6 +15,7 @@ interface SyncContextType {
   seekTo: (position: number) => void;
   toggleDarkMode: () => void;
   isDarkMode: boolean;
+  addCustomVideo: (video: Video) => void;
 }
 
 export interface ViewerPosition {
@@ -89,6 +90,12 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Apply initial dark mode setting
     applyDarkMode(isDarkMode);
     
+    // Set initial video
+    const initialVideo = VideoService.getAllVideos()[0];
+    if (initialVideo) {
+      setCurrentVideo(initialVideo);
+    }
+    
     return () => {
       // Clean up subscriptions
       positionSub();
@@ -129,6 +136,14 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
+  // Add custom video
+  const addCustomVideo = (video: Video) => {
+    VideoService.addCustomVideo(video);
+    setCurrentVideo(video);
+    VideoService.loadVideo(video);
+    setIsPlaying(false);
+  };
+  
   // Toggle playback
   const togglePlayback = () => {
     if (isPlaying) {
@@ -156,7 +171,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         togglePlayback,
         seekTo,
         toggleDarkMode,
-        isDarkMode
+        isDarkMode,
+        addCustomVideo
       }}
     >
       {children}

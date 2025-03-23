@@ -32,6 +32,9 @@ const featuredContent: Video[] = [
   }
 ];
 
+// Store custom videos added by users
+let customVideos: Video[] = [];
+
 type PositionCallback = (position: number) => void;
 type ConnectionCallback = (isConnected: boolean) => void;
 type PlaybackCallback = (isPlaying: boolean) => void;
@@ -61,6 +64,8 @@ export class VideoService {
       element.addEventListener('timeupdate', this.handleTimeUpdate);
       element.addEventListener('play', this.handlePlay);
       element.addEventListener('pause', this.handlePause);
+      element.addEventListener('loadedmetadata', this.handleLoadedMetadata);
+      element.addEventListener('error', this.handleError);
     }
   }
   
@@ -84,14 +89,38 @@ export class VideoService {
     this.notifyPlaybackChange(false);
   };
   
-  // Get video by ID
+  // Handle loaded metadata
+  private static handleLoadedMetadata = (): void => {
+    console.log('Video metadata loaded');
+    if (this.videoElement && this.currentVideo && this.currentVideo.duration === 0) {
+      // Update duration for custom videos once loaded
+      this.currentVideo.duration = this.videoElement.duration;
+    }
+  };
+  
+  // Handle error
+  private static handleError = (e: Event): void => {
+    console.error('Video playback error:', e);
+  };
+  
+  // Get video by ID (now includes custom videos)
   static getVideoById(id: string): Video | null {
-    return featuredContent.find(video => video.id === id) || null;
+    return [...featuredContent, ...customVideos].find(video => video.id === id) || null;
   }
   
-  // Get all videos
+  // Get all videos (including custom videos)
   static getAllVideos(): Video[] {
-    return [...featuredContent];
+    return [...featuredContent, ...customVideos];
+  }
+  
+  // Add a custom video
+  static addCustomVideo(video: Video): void {
+    const existingIndex = customVideos.findIndex(v => v.id === video.id);
+    if (existingIndex !== -1) {
+      customVideos[existingIndex] = video;
+    } else {
+      customVideos.push(video);
+    }
   }
   
   // Load a video
@@ -108,19 +137,22 @@ export class VideoService {
   // Play
   static play(): void {
     if (this.videoElement) {
-      this.videoElement.play()
-        .then(() => {
-          // Start sync interval
-          if (this.syncInterval === null) {
-            this.syncInterval = window.setInterval(() => {
-              // In a real app, this would sync with server
-              console.log('Syncing video position with server');
-            }, 5000);
-          }
-        })
-        .catch(error => {
-          console.error('Play failed:', error);
-        });
+      const playPromise = this.videoElement.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Start sync interval
+            if (this.syncInterval === null) {
+              this.syncInterval = window.setInterval(() => {
+                // In a real app, this would sync with server
+                console.log('Syncing video position with server');
+              }, 5000);
+            }
+          })
+          .catch(error => {
+            console.error('Play failed:', error);
+          });
+      }
     }
   }
   
@@ -152,6 +184,8 @@ export class VideoService {
       this.videoElement.removeEventListener('timeupdate', this.handleTimeUpdate);
       this.videoElement.removeEventListener('play', this.handlePlay);
       this.videoElement.removeEventListener('pause', this.handlePause);
+      this.videoElement.removeEventListener('loadedmetadata', this.handleLoadedMetadata);
+      this.videoElement.removeEventListener('error', this.handleError);
     }
     
     if (this.syncInterval !== null) {

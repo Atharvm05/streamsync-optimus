@@ -156,31 +156,6 @@ const About: React.FC = () => {
           </div>
         </section>
         
-        {/* Team Section */}
-        <section className="py-16 px-4 bg-muted/30">
-          <div className="container mx-auto max-w-6xl">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Meet Our Leadership</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-              {teamMembers.map((member, index) => (
-                <div 
-                  key={index}
-                  className="bg-card rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
-                >
-                  <img 
-                    src={member.image} 
-                    alt={member.name} 
-                    className="w-full aspect-square object-cover"
-                  />
-                  <div className="p-4 text-center">
-                    <h3 className="font-medium text-lg">{member.name}</h3>
-                    <p className="text-muted-foreground">{member.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        
         {/* Contact CTA */}
         <section className="py-16 px-4">
           <div className="container mx-auto max-w-6xl">
